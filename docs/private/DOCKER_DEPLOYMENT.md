@@ -4,8 +4,28 @@ This document records every problem encountered while setting up the MMORE RAG p
 
 ---
 
+## 0. Project Vision: The Universitas Indonesia One-Stop Help Desk
+
+This deployment is part of a larger, hybrid infrastructure designed to provide automated support for Universitas Indonesia (UI) students and staff. The goal is to build a **One-Stop Help Desk Chatbot** where users can ask any question about the university's regulations and services.
+
+### Hybrid Architecture (The Stack)
+- **Frontend (Vue.js)**: The interactive web interface for the chatbot and ticket tracking system.
+- **Core Backend (Go/Golang)**: Handles authentication, persistent storage, and the overarching **Ticketing System**.
+- **AI RAG System (Python/MMORE)**: The containerized intelligence engine (which this document covers). It is responsible for factual retrieval from UI regulations (e.g., SK Rektor).
+
+### Automated Fallback Logic
+The RAG Chatbot is designed to triage requests:
+1. **Direct Resolution**: If the RAG engine successfully finds an answer in the vector database, the response is served immediately to the user.
+2. **Ticketing Fallback**: If the RAG engine is unsure, lacks context, or cannot find the information, the system triggers a fallback flow. The user is prompted to **Create a Ticket**, which is then routed to and handled by the Go-based backend for human intervention.
+
+### Deployment Context
+Docker is used specifically to isolate this Python-based AI environment (with its heavy ML dependencies and GPU requirements) from the lightweight, high-concurrency Go backend, while allowing both services to communicate seamlessly over the local network.
+
+---
+
 ## Table of Contents
 
+0. [Project Vision: The Universitas Indonesia One-Stop Help Desk](#0-project-vision-the-universitas-indonesia-one-stop-help-desk)
 1. [Ollama Setup & GPU Access](#1-ollama-setup--gpu-access)
 2. [MMORE Code Bug Fixes](#2-mmore-code-bug-fixes)
 3. [Dependency Hell (pip vs uv, transformers version)](#3-dependency-hell)
