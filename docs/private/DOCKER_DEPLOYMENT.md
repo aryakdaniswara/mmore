@@ -642,3 +642,26 @@ docker run --rm -v ~/mmore/data_ingestion/outputs:/tmp_outputs alpine rm -rf /tm
   - Test if a custom architecture yields better performance due to explicit control over overlap metadata and native API Streaming responses.
 - [ ] **Stream Response Support**
   - Rewrite `@app.post(endpoint)` in `run_rag.py` to utilize FastAPI's `StreamingResponse` for realtime token streaming on the dashboard, bypassing the static `.invoke()` method.
+
+---
+
+## 14. Architecture Migration Plan: Moving Beyond MMORE
+
+While MMORE provided a solid foundation, its heavy abstraction layers create a "black box" effect that complicates deep architectural debugging, particularly for a research thesis where explainability is paramount. 
+
+To achieve our production goals, we plan to migrate from the out-of-the-box MMORE setup to a **Semi-Custom Python Pipeline** built directly with LangChain and vLLM.
+
+### Key Drivers for Migration:
+1. **High Concurrency & Inference Speed (vLLM)**
+   * **Current State**: Ollama provides a great developer experience but struggles with handling concurrent user requests efficiently.
+   * **Target State**: Switch the deployment engine to `vLLM` to utilize PagedAttention and continuous batching, which allows the AI engine to handle many UI students simultaneously without bottlenecking.
+2. **Dynamic Reasoning Control**
+   * **Goal**: Provide the ability to toggle "Deep Thinking" modes dynamically. Some simple Q&A tickets don't need reasoning overhead, while complex policy questions do. A custom LangChain pipeline lets us granularly control generation kwargs per route.
+3. **Robust Data Extraction & Verification**
+   * **Goal**: Move toward a rigorous extraction combo using **Docling** (for layout-aware PDF parsing) and **Trafilatura** (for aggressive HTML cleaning).
+   * We need a built-in verification/audit system where extracted text can be manually reviewed or automatically flagged if the extraction confidence is low.
+4. **Metadata Filtering (Crucial)**
+   * Our RAG system must support precise retrieval filtering (e.g., restricting vector searches strictly to `doc_id` or specific `category` metadata) to avoid hallucinating answers from unrelated academic policies. MMORE's default `retriever.py` wraps this away; a custom Milvus + LangChain retriever gives us direct control over the expression (`expr`) filters.
+5. **Native RAGAS Integration**
+   * Having direct access to the pipeline steps (Input, Context, Answer) makes logging and scoring these requests with RAGAS much more transparent for the research paper.
+
